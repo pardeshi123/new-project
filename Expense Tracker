@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <script defer src="script.js"></script>
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 90%;
+            width: 400px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        h1, h3 {
+            font-size: 24px;
+            color: #333;
+            text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+            padding: 10px;
+            background: linear-gradient(to right, #ff9966, #ff5e62);
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        .balance {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d7a2d;
+            padding: 10px;
+            border-radius: 8px;
+            background: #e9f5e9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease-in-out, color 0.3s ease-in-out;
+        }
+        .balance.earning {
+            animation: increaseBalance 0.5s ease-in-out;
+            color: green;
+        }
+        .balance.expense {
+            animation: decreaseBalance 0.5s ease-in-out;
+            color: red;
+        }
+        @keyframes increaseBalance {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        @keyframes decreaseBalance {
+            0% { transform: scale(1); }
+            50% { transform: scale(0.9); }
+            100% { transform: scale(1); }
+        }
+        .form input, .form select, .form button {
+            width: 95%;
+            margin: 10px 0;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        .form button {
+            background: #4caf50;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .form button:hover {
+            background: #388e3c;
+        }
+        .transactions-list ul {
+            list-style: none;
+            padding: 0;
+        }
+        .transactions-list li {
+            background: #ddd;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .expense {
+            color: red;
+            font-weight: bold;
+        }
+        .earning {
+            color: green;
+            font-weight: bold;
+        }
+        @media (max-width: 600px) {
+            .container {
+                width: 90%;
+                padding: 15px;
+            }
+            h1, h3 {
+                font-size: 20px;
+            }
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const balanceElement = document.getElementById("balance");
+            const transactionList = document.getElementById("transaction-list");
+            let balance = parseFloat(localStorage.getItem("balance")) || 0;
+            balanceElement.innerText = balance.toFixed(2);
+
+            let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+            transactions.forEach(transaction => {
+                addTransactionToDOM(transaction);
+            });
+        });
+
+        function addTransaction() {
+            const desc = document.getElementById('desc').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const type = document.getElementById('type').value;
+            const category = document.getElementById('category').value;
+            let balance = parseFloat(localStorage.getItem("balance")) || 0;
+            
+            if (desc && amount && !isNaN(amount)) {
+                if (type === 'expense' && balance < amount) {
+                    document.getElementById("warning").style.display = "block";
+                    return;
+                } else {
+                    document.getElementById("warning").style.display = "none";
+                }
+
+                if (type === 'earning') {
+                    balance += amount;
+                } else {
+                    balance -= amount;
+                }
+                localStorage.setItem("balance", balance);
+                document.getElementById("balance").innerText = balance.toFixed(2);
+                
+                const transaction = { desc, amount, type, category };
+                let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+                transactions.push(transaction);
+                localStorage.setItem("transactions", JSON.stringify(transactions));
+                
+                addTransactionToDOM(transaction);
+            }
+        }
+
+        function addTransactionToDOM(transaction) {
+            const transactionList = document.getElementById("transaction-list");
+            const li = document.createElement("li");
+            li.classList.add(transaction.type);
+            li.innerText = `${transaction.desc} - $${transaction.amount.toFixed(2)} [${transaction.category}]`;
+            transactionList.appendChild(li);
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Expense Tracker</h1>
+        <div class="balance">
+            <h2>Balance: <span id="balance">0.00</span></h2>
+        </div>
+        <div id="warning" class="warning" style="display: none; color: red; font-weight: bold;">Insufficient Balance!</div>
+        <div class="form">
+            <input type="text" id="desc" placeholder="Description">
+            <input type="number" id="amount" placeholder="Amount">
+            <select id="type">
+                <option value="expense">Expense</option>
+                <option value="earning">Earning</option>
+            </select>
+            <select id="category">
+                <option value="Food">Food</option>
+                <option value="Travel">Travel</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Salary">Salary</option>
+                <option value="Other">Other</option>
+            </select>
+            <button onclick="addTransaction()">Add Transaction</button>
+        </div>
+        <div class="transactions-list">
+            <h3>Transactions</h3>
+            <ul id="transaction-list"></ul>
+        </div>
+    </div>
+</body>
+</html>
